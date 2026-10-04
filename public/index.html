@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BudgetBites — Eat better. Spend less. Cook smarter.</title>
+<meta name="description" content="Evidence-backed Indian student recipes that fit your budget, diet, ingredients and kitchen.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23194D36'/%3E%3Cpath d='M7 15h18a9 9 0 0 1-18 0z' fill='%23fff'/%3E%3Cpath d='M16 13c0-4 2-6 5-6 0 3-2 6-5 6z' fill='%23E9A23B'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div id="mode-banner" class="mode-banner" role="status" hidden></div>
+<header class="topbar">
+  <div class="wrap topbar__in">
+    <a class="brand" href="#/" aria-label="BudgetBites home"><span class="brand__mark" aria-hidden="true"></span><span class="brand__name">Budget<b>Bites</b></span></a>
+    <nav class="nav" aria-label="Primary">
+      <a href="#/" data-route="build">Build</a>
+      <a href="#/saved" data-route="saved">Saved <span class="count" id="saved-count" hidden>0</span></a>
+      <a href="#/list" data-route="list">Shopping list <span class="count" id="list-count" hidden>0</span></a>
+    </nav>
+  </div>
+</header>
+<main id="main" class="wrap" tabindex="-1"></main>
+<footer class="wrap foot">
+  <p><b>BudgetBites</b> · Eat better. Spend less. Cook smarter.</p>
+  <p>Saved recipes, shopping list and your choices are stored in this browser only. Clearing site data removes them.</p>
+</footer>
+<nav class="bottomnav" aria-label="Primary mobile">
+  <a href="#/" data-route="build"><span aria-hidden="true">🍲</span>Build</a>
+  <a href="#/saved" data-route="saved"><span aria-hidden="true">♡</span>Saved</a>
+  <a href="#/list" data-route="list"><span aria-hidden="true">☰</span>List</a>
+</nav>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script type="module" src="/js/main.js"></script>
+</body>
+</html>
