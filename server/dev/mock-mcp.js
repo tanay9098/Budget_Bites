@@ -22,10 +22,10 @@ function buildServer(entries) {
   const s = new McpServer({ name: 'budgetbites-dev-mock', version: '0.0.0' });
   const titleOf = (t) => /^title:\s*(.+)$/m.exec(t)?.[1] ?? '';
   s.registerTool('initial_context', { description: 'Outline of the (mock) Knowledge Base.', inputSchema: {} }, async () => ({
-    content: [{ type: 'text', text: `# DEV MOCK outline\n\n## Knowledge Base ${MOCK_KB_ID}\n${entries.map((e) => `- \`${e.path}\` — ${titleOf(e.text)}`).join('\n')}` }],
+    content: [{ type: 'text', text: `## DEV MOCK Knowledge Base — local seed files, not Sanity\nKnowledge base id: ${MOCK_KB_ID}\n${entries.length} entries.\n\n${entries.map((e) => `${e.path}\n  ${titleOf(e.text)}`).join('\n\n')}` }],
   }));
-  s.registerTool('knowledge_base_read', { description: 'Read entries by path.', inputSchema: { knowledgeBaseId: z.string(), paths: z.array(z.string()).min(1).max(20) } }, async ({ knowledgeBaseId, paths }) => {
-    if (knowledgeBaseId !== MOCK_KB_ID) return { isError: true, content: [{ type: 'text', text: 'unknown knowledge base' }] };
+  s.registerTool('knowledge_base_read', { description: 'Read entries by path.', inputSchema: { knowledgeBase: z.string(), paths: z.array(z.string()).min(1).max(20) } }, async ({ knowledgeBase, paths }) => {
+    if (knowledgeBase !== MOCK_KB_ID) return { isError: true, content: [{ type: 'text', text: 'unknown knowledge base' }] };
     const hits = paths.map((p) => entries.find((e) => e.path === p)).filter(Boolean);
     if (!hits.length) return { isError: true, content: [{ type: 'text', text: 'not found' }] };
     return { content: hits.map((h) => ({ type: 'text', text: h.text })) };

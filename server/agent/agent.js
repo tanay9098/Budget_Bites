@@ -32,6 +32,9 @@ export async function runAgent({ request, mcp, extractor, config, mode = 'live',
   step('outline', `Read the outline: ${candidates.length} entries`);
 
   // Choose entries. Small KBs are read whole; larger ones are narrowed by the model, validated against the outline.
+  // [core] entries (central to the Knowledge Base's purpose) are read first when we must truncate.
+  const rank = (e) => ({ core: 0, peripheral: 2 }[e.tag] ?? 1);
+  candidates = [...candidates].sort((a, b) => rank(a) - rank(b));
   let chosen = candidates;
   if (candidates.length > config.maxDocs && extractor.select) {
     const paths = await extractor.select({ request, outlineText: outline.raw });

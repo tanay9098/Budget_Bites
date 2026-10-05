@@ -39,7 +39,17 @@ export function extractCitations(text) {
   return out;
 }
 
-/** Parse the outline from initial_context into [{kbId, path, title}]. Tolerant: JSON or markdown. */
+/**
+ * Parse the outline from initial_context. Documented format (Sanity "Knowledge Bases" docs):
+ *   ## Title - purpose
+ *   Knowledge base id: kb...
+ *   N entries.
+ *
+ *   products/latex/gloves [core]
+ *     one-line summary
+ *     topics: A, B
+ * Paths are slash-delimited and must be read back verbatim. Falls back to JSON if the endpoint returns it.
+ */
 export function parseOutline(text) {
   const entries = [];
   try {
@@ -47,19 +57,25 @@ export function parseOutline(text) {
       if (Array.isArray(node)) return node.forEach((n) => walk(n, kbId));
       if (node && typeof node === 'object') {
         const id = typeof node.id === 'string' && /^kb/i.test(node.id) ? node.id : kbId;
-        if (typeof node.path === 'string') entries.push({ kbId: id ?? null, path: node.path, title: node.title ?? node.name ?? null });
+        if (typeof node.path === 'string') entries.push({ kbId: id ?? null, path: node.path, title: node.title ?? node.summary ?? null, tag: null });
         Object.values(node).forEach((v) => walk(v, id));
       }
     };
     walk(JSON.parse(text), null);
     if (entries.length) return dedupe(entries);
-  } catch { /* not JSON */ }
-  let kb = null;
-  for (const line of text.split(/\r?\n/)) {
-    const k = /\b(kb[A-Za-z0-9_-]{4,})\b/.exec(line);
-    if (k && !/`[^`]*\//.test(line)) kb = k[1];
-    const p = /`([^`\s]+\.md|[^`\s]+\/[^`\s]*)`\s*(?:[-—–:]\s*(.+))?/.exec(line);
-    if (p) entries.push({ kbId: kb, path: p[1], title: p[2]?.trim() ?? null });
+  } catch { /* not JSON: use the documented text format */ }
+  let kb = null, last = null;
+  for (const raw of text.split(/\r?\n/)) {
+    const idLine = /knowledge base id:\s*`?(kb[A-Za-z0-9_-]+)`?/i.exec(raw);
+    if (idLine) { kb = idLine[1]; last = null; continue; }
+    if (/^\s*$/.test(raw) || /^#/.test(raw)) { if (/^#/.test(raw)) last = null; continue; }
+    if (/^\s/.test(raw)) { // indented: summary / topics / related belong to the previous entry
+      const t = raw.trim();
+      if (last && !last.title && !/^(topics|related):/i.test(t)) last.title = t;
+      continue;
+    }
+    const m = /^([A-Za-z0-9][A-Za-z0-9_\-./]*)(?:\s+\[(core|peripheral)\])?\s*$/.exec(raw.trim());
+    if (m && kb) { last = { kbId: kb, path: m[1], title: null, tag: m[2] ?? null }; entries.push(last); } else last = null;
   }
   return dedupe(entries);
 }

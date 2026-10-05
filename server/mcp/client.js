@@ -5,6 +5,13 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 import { assertSafeMcpUrl } from '../config.js';
 import { toolText, parseOutline, buildDocument, McpResponseError } from './normalize.js';
 
+/** Pin the request to one Knowledge Base via the documented URL parameters (mode, knowledgeBases). */
+export function applyKnowledgeBase(url, kbId) {
+  if (!/^kb[A-Za-z0-9_-]+$/.test(kbId)) throw new McpUnavailableError('SANITY_KNOWLEDGE_BASE_ID is not a valid Knowledge Base id (it starts with "kb").', 'config');
+  if (!url.searchParams.has('knowledgeBases')) { url.searchParams.set('mode', 'knowledge_base'); url.searchParams.set('knowledgeBases', kbId); }
+  return url;
+}
+
 export class McpUnavailableError extends Error {
   constructor(message, kind = 'connection') { super(message); this.kind = kind; }
 }
@@ -15,8 +22,9 @@ const withTimeout = (p, ms, label) => {
 };
 
 export class SanityContextClient {
-  constructor({ url, token, timeoutMs = 15000, allowLocal = false }) {
+  constructor({ url, token, timeoutMs = 15000, allowLocal = false, kbId = '' }) {
     this.url = assertSafeMcpUrl(url, { allowLocal });
+    if (kbId) applyKnowledgeBase(this.url, kbId);
     this.token = token;
     this.timeoutMs = timeoutMs;
     this.client = null;
@@ -59,13 +67,14 @@ export class SanityContextClient {
     return buildDocument({ kbId, path, outlineTitle: title }, raw);
   }
 
-  // Argument names are taken from the tool's own advertised input schema, not assumed.
+  // Documented arguments: { knowledgeBase: "kb...", paths: [...] }. If the endpoint advertises a
+  // different shape in its input schema we follow that instead.
   #readArgs(kbId, path) {
-    const props = Object.keys(this.tools.find((t) => t.name === 'knowledge_base_read')?.inputSchema?.properties ?? {});
-    const idKey = props.find((k) => /(kb|knowledge).*id|^id$/i.test(k)) ?? 'knowledgeBaseId';
-    const pathKey = props.find((k) => /path/i.test(k)) ?? 'paths';
-    const arr = this.tools.find((t) => t.name === 'knowledge_base_read')?.inputSchema?.properties?.[pathKey]?.type !== 'string';
-    return { [idKey]: kbId, [pathKey]: arr ? [path] : path };
+    const props = this.tools.find((t) => t.name === 'knowledge_base_read')?.inputSchema?.properties ?? {};
+    const keys = Object.keys(props);
+    const idKey = keys.find((k) => /^(kb|knowledge)/i.test(k)) ?? 'knowledgeBase';
+    const pathKey = keys.find((k) => /path/i.test(k)) ?? 'paths';
+    return { [idKey]: kbId, [pathKey]: props[pathKey]?.type === 'string' ? path : [path] };
   }
 
   async close() {

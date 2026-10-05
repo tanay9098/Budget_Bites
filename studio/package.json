@@ -1,0 +1,23 @@
+{
+  "name": "budgetbites-studio",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "sanity dev",
+    "build": "sanity build",
+    "deploy": "sanity deploy",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "^19",
+    "react-dom": "^19",
+    "sanity": "^5.1.0",
+    "styled-components": "^6"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "@types/react": "^19",
+    "typescript": "^5.8.0"
+  }
+}
