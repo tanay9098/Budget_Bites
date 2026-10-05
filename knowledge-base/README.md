@@ -23,14 +23,18 @@ Front matter keys the app understands: `title`, `source_title`, `source_url`, `a
 
 To make the corpus richer, add real sources: each recipe/price/technique should carry `source_url` and `as_of`. Sanity compiles Knowledge Base entries with citations back to sources; the app preserves any markdown links and `source_url` it receives.
 
-## Getting this into Sanity (UNVERIFIED steps)
+## Getting this into Sanity (per the official docs)
 
-The sandbox this was built in could not open sanity.io, so these steps follow search-result summaries of the docs, not the pages themselves. Follow the current official docs:
-<https://www.sanity.io/docs/ai/sanity-context-create-knowledge-base> and <https://www.sanity.io/docs/ai/sanity-context-source-types>.
+Source: [Create a Knowledge Base](https://www.sanity.io/docs/ai/sanity-context-create-knowledge-base), [source types](https://www.sanity.io/docs/ai/sanity-context-source-types), [Knowledge Bases](https://www.sanity.io/docs/ai/sanity-context-knowledge-bases), [Configure an MCP](https://www.sanity.io/docs/ai/sanity-context-configure-mcp). Not yet executed by this repo's author.
 
-1. In Sanity, create a Knowledge Base and attach `sources/*.md` as sources (or import them as documents in a dataset and attach those, as the source-type docs allow).
-2. Wait for indexing, then create/configure a **Context MCP endpoint** that serves the Knowledge Base (`{"type":"knowledge-base","id":"kb..."}`).
-3. Create an **organization-level** API token with **Context Viewer** permission (project tokens are rejected).
-4. Put the endpoint URL and token in `.env`, then run `npm run test:live`.
+1. An organization admin enables Context on the [Labs page](https://www.sanity.io/manage/org/labs) (Knowledge Bases are an opt-in **beta**).
+2. Dashboard → **Context → New knowledge base**. Title: `BudgetBites`. Purpose (steers the outline and which entries are `[core]`), for example: *"Budget-conscious Indian students and home cooks. Covers affordable vegetarian and non-vegetarian recipes, dated ingredient prices, substitutions, pressure-cooker and induction safety, and dietary and budget rules."*
+3. **Add source → Files**: upload `sources/*.md` (Markdown is ingested directly; uploaded files never re-sync, so to change one delete the import and re-upload). *Or*, better for provenance and updates, author in the Studio ([`studio/`](../studio/README.md)) and add a **Dataset** source with the GROQ query given there.
+4. Click **Build entries**; wait for **Entries up to date**. Review **Entries** and resolve **Issues**. Entries are rewritten by each build and cannot be hand-edited: to change an answer, change the source or add an instruction.
+5. **Context → create an MCP** whose sources are the Knowledge Base (an endpoint with only Knowledge Base sources serves Knowledge Base tools automatically). Copy the endpoint URL (`https://api.sanity.io/v1/context/organizations/<orgId>/mcp/<endpointName>`).
+6. Create an **organization** API token with Context Viewer permission (Manage → API → Tokens, organization level).
+7. Set `SANITY_CONTEXT_MCP_URL`, `SANITY_ORG_API_TOKEN`, `ANTHROPIC_API_KEY`, then `npm run test:live`.
 
-Nothing has been indexed by this repository's author; no Knowledge Base id exists in this repo.
+Because Sanity compiles entries from these sources, wording may change and the `budgetbites-data` blocks are not preserved: the live agent works from the compiled prose and only keeps facts it can quote verbatim from it.
+
+No Knowledge Base has been created or indexed by this repository's author; no Knowledge Base id exists in this repo.
