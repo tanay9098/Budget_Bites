@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BudgetBites — Responsive Preview</title>
+<style>
+body{margin:0;font-family:system-ui,sans-serif;background:#E7E8DF;color:#24352B}
+.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:12px 16px;background:#fff;border-bottom:1px solid #d6d8cc;position:sticky;top:0;z-index:2}
+.bar b{margin-right:8px}
+button{padding:8px 14px;border-radius:10px;border:1.5px solid #E7E8DF;background:#fff;font-weight:700;cursor:pointer}
+button[aria-pressed=true]{background:#24352B;color:#fff}
+.stage{display:flex;justify-content:center;padding:20px}
+iframe{border:0;background:#FFF9F0;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.18);width:1440px;max-width:100%;height:calc(100vh - 110px)}
+</style></head><body>
+<div class="bar"><b>Preview width</b>
+<button data-w="320">320 small phone</button><button data-w="390">390 phone</button><button data-w="520">520 large phone</button><button data-w="768">768 tablet</button><button data-w="1024">1024</button><button data-w="1440" aria-pressed="true">1440 desktop</button>
+<span id="cur" style="margin-left:auto;font-size:13px"></span></div>
+<div class="stage"><iframe id="f" src="index.html" title="BudgetBites app preview"></iframe></div>
+<script>
+const f=document.getElementById('f'),bs=[...document.querySelectorAll('button')];
+bs.forEach(b=>b.onclick=()=>{f.style.width=b.dataset.w+'px';bs.forEach(x=>x.setAttribute('aria-pressed',x===b));document.getElementById('cur').textContent=b.dataset.w+'px'});
+</script></body></html>
