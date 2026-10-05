@@ -16,7 +16,7 @@ Savoury gram-flour pancakes cooked on a tawa or flat pan. No pressure cooker and
 - Onion 50 g
 - Tomato 50 g
 - Green chilli 5 g
-- Cooking oil 10 ml
+- Cooking oil 10 g
 - Salt 3 g
 - Turmeric powder 1 g
 
@@ -27,7 +27,7 @@ Savoury gram-flour pancakes cooked on a tawa or flat pan. No pressure cooker and
 
 ```budgetbites-data
 {"type":"recipe","recipe":{"id":"veg-besan-chilla","name":"Besan chilla","cuisine":"North Indian","meals":["breakfast","snack","dinner"],"prepMinutes":10,"cookMinutes":15,"servingsBase":2,"equipment":["stove","flat pan"],"protein":true,
-"ingredients":[{"name":"besan","qty":100,"unit":"g","category":"veg","aliases":["gram flour"]},{"name":"onion","qty":50,"unit":"g","category":"veg"},{"name":"tomato","qty":50,"unit":"g","category":"veg"},{"name":"green chilli","qty":5,"unit":"g","category":"veg"},{"name":"cooking oil","qty":10,"unit":"ml","category":"veg"},{"name":"salt","qty":3,"unit":"g","category":"veg"},{"name":"turmeric powder","qty":1,"unit":"g","category":"veg"}],
+"ingredients":[{"name":"besan","qty":100,"unit":"g","category":"veg","aliases":["gram flour"]},{"name":"onion","qty":50,"unit":"g","category":"veg"},{"name":"tomato","qty":50,"unit":"g","category":"veg"},{"name":"green chilli","qty":5,"unit":"g","category":"veg"},{"name":"cooking oil","qty":10,"unit":"g","category":"veg"},{"name":"salt","qty":3,"unit":"g","category":"veg"},{"name":"turmeric powder","qty":1,"unit":"g","category":"veg"}],
 "steps":["Whisk besan with salt, turmeric and about 200 ml water into a pourable batter.","Stir in chopped onion, tomato and chilli.","Spread a ladle of batter on an oiled hot pan and cook both sides until golden."],
 "why":"No cooker or rice needed; besan is a pulse flour.","evidenceQuote":"No pressure cooker and no rice needed"}}
 ```

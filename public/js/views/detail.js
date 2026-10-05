@@ -60,17 +60,20 @@ export function renderDetail(root, id) {
 function costSection(cost, budgetPer, budget) {
   const caveats = [];
   if (cost.caveats.includes('placeholder_price')) caveats.push('Some prices are placeholder values from the seed data and are not real market prices.');
+  const unc = cost.lines.filter((l) => l.status === 'uncosted').map((l) => l.name);
+  if (unc.length) caveats.push(`Not costed, because the Knowledge Base has no price for them: ${unc.join(', ')}. The total excludes these seasonings.`);
+  if (cost.caveats.includes('national_average')) caveats.push('Prices are all-India averages of retail prices, not the price at your local shop.');
   if (cost.caveats.includes('stale_price')) caveats.push('Some prices are older than 180 days.');
   if (cost.caveats.includes('undated_price')) caveats.push('Some prices have no date.');
   if (cost.caveats.includes('missing_price')) caveats.push('Some ingredients have no price in the Knowledge Base, so the total is incomplete (shown with +).');
   if (cost.caveats.includes('incompatible_units')) caveats.push('Some prices use units that cannot be safely converted (for example grams vs millilitres).');
   const regions = cost.caveats.filter((c) => c.startsWith('region:')).map((c) => c.slice(7));
-  if (regions.length) caveats.push(`Price region: ${regions.join(', ')}.`);
+  if (regions.length && !cost.caveats.includes('national_average')) caveats.push(`Price region: ${regions.join(', ')}.`);
   return h('section', { class: 'card', 'aria-labelledby': 'h-cost' }, h('h3', { id: 'h-cost', class: 'section-title' }, 'Cost breakdown'),
     h('div', { class: 'tablewrap' }, h('table', {}, h('thead', {}, h('tr', {}, h('th', {}, 'Ingredient'), h('th', { class: 'num' }, 'Used'), h('th', {}, 'Price basis'), h('th', { class: 'num' }, 'Cost'))),
-      h('tbody', {}, cost.lines.map((l) => h('tr', {}, h('td', {}, l.name), h('td', { class: 'num' }, `${l.qty} ${l.unit}`), h('td', {}, l.price ? `${rupees(l.price.packagePrice)} per ${l.price.packageQty} ${l.price.unit}${l.price.asOf ? ` · ${l.price.asOf}` : ''}${l.price.freshness && l.price.freshness !== 'fresh' ? ` · ${l.price.freshness}` : ''}` : 'Price unavailable'), h('td', { class: 'num' }, l.cost == null ? '—' : rupees(l.cost))))),
+      h('tbody', {}, cost.lines.map((l) => h('tr', {}, h('td', {}, l.name), h('td', { class: 'num' }, `${l.qty} ${l.unit}`), h('td', {}, l.price ? `${rupees(l.price.packagePrice)} per ${l.price.packageQty} ${l.price.unit}${l.price.asOf ? ` · ${l.price.asOf}` : ''}${l.price.freshness && l.price.freshness !== 'fresh' ? ` · ${l.price.freshness}` : ''}` : l.status === 'uncosted' ? 'No price source' : 'Price unavailable'), h('td', { class: 'num' }, l.status === 'uncosted' ? 'not costed' : l.cost == null ? '—' : rupees(l.cost))))),
       h('tfoot', {}, h('tr', {}, h('th', { colspan: 3 }, 'Consumed cost (ingredients actually used)'), h('th', { class: 'num' }, `${rupees(cost.total)}${cost.complete ? '' : '+'}`))))),
-    cost.purchaseComplete ? h('p', {}, h('b', {}, 'To buy whole packages: '), `about ${rupees(cost.purchaseTotal)} (you will have leftovers for later meals).`) : h('p', { class: 'muted' }, 'Whole-package shopping cost is unavailable because some prices are missing.'),
+    cost.purchaseComplete ? h('p', {}, h('b', {}, 'If you bought a full unit of each item: '), `about ${rupees(cost.purchaseTotal)}. Prices are quoted per kg, so this is an upper bound; smaller packs from a local shop cost less in total, and you keep the leftovers.`) : h('p', { class: 'muted' }, 'Shopping cost is unavailable because some prices are missing.'),
     budgetPer ? h('p', {}, h('b', {}, 'Budget check: '), budgetBadges(budget)) : null,
     caveats.length ? h('div', { class: 'notice notice--warn' }, h('b', {}, 'Treat this as an estimate'), h('ul', { style: 'margin:0;padding-left:18px' }, caveats.map((c) => h('li', {}, c)))) : null,
     h('p', { class: 'hint' }, 'Formula: package price × quantity used ÷ package quantity, calculated by the app, not by the AI. Nutrition values are not shown because the Knowledge Base provided none.'));

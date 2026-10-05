@@ -16,7 +16,7 @@ The classic dal-chawal. Dal is pressure-cooked, finished with a cumin tadka, and
 - Rice 120 g
 - Onion 50 g
 - Tomato 50 g
-- Cooking oil 15 ml
+- Cooking oil 15 g
 - Cumin seeds 2 g
 - Turmeric powder 1 g
 - Salt 4 g
@@ -28,7 +28,7 @@ The classic dal-chawal. Dal is pressure-cooked, finished with a cumin tadka, and
 
 ```budgetbites-data
 {"type":"recipe","recipe":{"id":"veg-dal-rice","name":"Toor dal tadka with rice","cuisine":"North Indian","meals":["lunch","dinner"],"prepMinutes":10,"cookMinutes":30,"servingsBase":2,"equipment":["pressure cooker"],"protein":true,
-"ingredients":[{"name":"toor dal","qty":80,"unit":"g","category":"veg"},{"name":"rice","qty":120,"unit":"g","category":"veg"},{"name":"onion","qty":50,"unit":"g","category":"veg"},{"name":"tomato","qty":50,"unit":"g","category":"veg"},{"name":"cooking oil","qty":15,"unit":"ml","category":"veg"},{"name":"cumin seeds","qty":2,"unit":"g","category":"veg"},{"name":"turmeric powder","qty":1,"unit":"g","category":"veg"},{"name":"salt","qty":4,"unit":"g","category":"veg"}],
+"ingredients":[{"name":"toor dal","qty":80,"unit":"g","category":"veg"},{"name":"rice","qty":120,"unit":"g","category":"veg"},{"name":"onion","qty":50,"unit":"g","category":"veg"},{"name":"tomato","qty":50,"unit":"g","category":"veg"},{"name":"cooking oil","qty":15,"unit":"g","category":"veg"},{"name":"cumin seeds","qty":2,"unit":"g","category":"veg"},{"name":"turmeric powder","qty":1,"unit":"g","category":"veg"},{"name":"salt","qty":4,"unit":"g","category":"veg"}],
 "steps":["Wash dal and cook with turmeric, salt and about 400 ml water for 4 whistles.","Cook the washed rice separately with about 300 ml water for 2 whistles.","Heat oil, fry cumin, onion and tomato, then stir the tadka into the dal."],
 "why":"Dal-chawal is a pulse-plus-grain meal that fits a pressure cooker.","evidenceQuote":"Dal is pressure-cooked, finished with a cumin tadka"}}
 ```

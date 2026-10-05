@@ -4,6 +4,11 @@ import { toBase, round } from './units.js';
 
 export const STALE_DAYS = 180;
 
+// Seasonings with no price in the knowledge base are reported as "not costed" instead of making the
+// whole recipe cost unavailable. Everything else without a price still makes the total incomplete.
+const SEASONING = /\b(turmeric|cumin|cummin|jeera|chilli|chili|chillies|mustard seeds?|coriander|garam masala|pepper|hing|asafoetida|cinnamon|cardamom|cloves?|bay leaf|curry leaves)\b/i;
+export const isSeasoning = (name) => SEASONING.test(String(name ?? ''));
+
 export function normName(s) {
   return String(s ?? '').toLowerCase().replace(/[^a-z0-9ऀ-ॿ ]+/g, ' ').replace(/\s+/g, ' ').trim();
 }
@@ -62,13 +67,17 @@ export function recipeCost(recipe, servings, priceBook, now = new Date()) {
     const price = priceBook.get(normName(ing.name)) ?? (ing.aliases ?? []).map((a) => priceBook.get(normName(a))).find(Boolean);
     const c = ingredientCost({ qty, unit: ing.unit }, price);
     const freshness = price ? priceFreshness(price, now) : null;
-    if (c.status !== 'ok') {
+    if (c.status === 'missing_price' && isSeasoning(ing.name)) {
+      c.status = 'uncosted';
+      caveats.add('uncosted_seasoning');
+    } else if (c.status !== 'ok') {
       if (!ing.optional) { complete = false; purchaseComplete = false; }
       caveats.add(c.status === 'missing_price' ? 'missing_price' : c.status);
     } else {
       if (!ing.optional) { total += c.cost; purchase += c.purchaseCost; }
       if (freshness !== 'fresh') caveats.add(freshness === 'stale' ? 'stale_price' : freshness === 'placeholder' ? 'placeholder_price' : 'undated_price');
       if (price.region) caveats.add(`region:${price.region}`);
+      if (/all india/i.test(price.region ?? '')) caveats.add('national_average');
     }
     lines.push({
       name: ing.name, qty, unit: ing.unit, optional: Boolean(ing.optional), status: c.status,
@@ -89,7 +98,7 @@ export function budgetStatus(cost, budgetPerServing) {
   const per = cost.perServing;
   // A partial total is a lower bound: it can prove "over", never "within".
   if (!cost.complete) return per > budgetPerServing ? { state: 'over', delta: round(per - budgetPerServing, 2), lowerBound: true } : { state: 'unknown', lowerBound: true };
-  const uncertain = cost.caveats.some((c) => c === 'stale_price' || c === 'undated_price' || c === 'placeholder_price');
+  const uncertain = cost.caveats.some((c) => c === 'stale_price' || c === 'undated_price' || c === 'placeholder_price' || c === 'uncosted_seasoning' || c === 'national_average');
   if (per > budgetPerServing) return { state: 'over', delta: round(per - budgetPerServing, 2), uncertain };
   const left = round(budgetPerServing - per, 2);
   const near = left <= Math.max(2, budgetPerServing * 0.15);

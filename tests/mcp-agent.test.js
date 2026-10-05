@@ -64,9 +64,12 @@ test('agent: a KB with no verifiable recipe returns no recipes and says so', asy
   });
 });
 
+// Test-only price for an item the real source does not monitor, so budget rejection can be exercised.
+const chickenPriceDoc = () => doc('test-chicken-price.md', 'TEST chicken price', '| Chicken (curry cut) | 240.00 |', { type: 'prices', prices: [{ ingredient: 'chicken', packagePrice: 240, packageQty: 1, unit: 'kg', region: 'TEST', asOf: '2026-10-04', evidenceQuote: '| Chicken (curry cut) | 240.00 |' }] });
+
 // ---- Demonstration scenarios (A-E) ----
 test('Scenario A: Rs30, rice+onion, pressure cooker, veg, protein', async () => {
-  await withMock(await seedEntries(), async (c) => {
+  await withMock([...(await seedEntries()), chickenPriceDoc()], async (c) => {
     const r = await agent(c, { ...baseRequest, preferences: { highProtein: true } });
     assert.ok(r.recipes.length >= 2);
     assert.ok(r.recipes.every((x) => x.classification.diet === 'veg' && x.cost.perServing <= 30));
@@ -74,7 +77,15 @@ test('Scenario A: Rs30, rice+onion, pressure cooker, veg, protein', async () => 
     assert.ok(r.rejected.some((x) => x.failures.some((f) => f.code === 'budget')), 'chicken curry rejected on budget');
     const pulao = r.recipes.find((x) => x.id === 'veg-pulao');
     assert.ok(pulao && pulao.proteinSources.length === 0, 'low-protein trade-off is visible');
-    for (const x of r.recipes) { assert.ok(x.evidence.quote); assert.ok(x.cost.lines.every((l) => l.price)); }
+    for (const x of r.recipes) {
+      assert.ok(x.evidence.quote);
+      if (x.cost.complete) assert.ok(x.cost.lines.every((l) => l.price || l.status === 'uncosted'), 'every costed line has a sourced price');
+      assert.ok(x.cost.caveats.includes('national_average'));
+    }
+    const kh = r.recipes.find((x) => x.id === 'veg-khichdi');
+    assert.ok(kh.cost.caveats.includes('uncosted_seasoning'), 'turmeric/cumin are reported as not costed');
+    assert.equal(kh.cost.lines.find((l) => l.name === 'rice').price.evidence.source.url, 'https://fcainfoweb.nic.in/');
+    assert.equal(kh.cost.lines.find((l) => l.name === 'rice').cost, 4.59, '100 g x Rs45.87/kg');
   });
 });
 test('Scenario B: substitution guidance is retrieved, diet-checked, and gaps are stated', async () => {
@@ -111,9 +122,9 @@ test('Scenario C (negative): sources that agree produce no conflict', async () =
   await withMock([a, b, ...(await seedEntries())], async (c) => assert.equal((await agent(c, baseRequest)).conflicts.length, 0));
 });
 test('Scenario D: old/other-region price => estimate, never a promise', async () => {
-  const entries = (await seedEntries()).filter((e) => !e.path.startsWith('prices-staples'));
-  entries.push(doc('old-prices.md', 'Old Mumbai price list', '| Ingredient | Price | Package quantity |\n| Rice | Rs 20 | 1 kg |\n| Moong dal | Rs 30 | 1 kg |\n| Toor dal | Rs 30 | 1 kg |\n| Cooking oil | Rs 40 | 1 l |\n| Salt | Rs 5 | 1 kg |\n| Turmeric powder | Rs 10 | 100 g |\n| Cumin seeds | Rs 10 | 100 g |\n| Besan | Rs 30 | 1 kg |\n| Soy chunks | Rs 10 | 100 g |',
-    { type: 'prices', prices: [['rice', 20, 1, 'kg'], ['moong dal', 30, 1, 'kg'], ['toor dal', 30, 1, 'kg'], ['cooking oil', 40, 1, 'l'], ['salt', 5, 1, 'kg'], ['turmeric powder', 10, 100, 'g'], ['cumin seeds', 10, 100, 'g'], ['besan', 30, 1, 'kg'], ['soy chunks', 10, 100, 'g']].map(([ingredient, packagePrice, packageQty, unit]) => ({ ingredient, packagePrice, packageQty, unit, region: 'Mumbai', asOf: '2024-03-01', evidenceQuote: `| ${ingredient[0].toUpperCase()}${ingredient.slice(1)} | Rs ${packagePrice} | ${packageQty} ${unit} |` })) }));
+  const entries = (await seedEntries()).filter((e) => !e.path.startsWith('prices-dca'));
+  entries.push(doc('old-prices.md', 'Old Mumbai price list', '| Ingredient | Price | Package quantity |\n| Rice | Rs 20 | 1 kg |\n| Moong dal | Rs 30 | 1 kg |\n| Toor dal | Rs 30 | 1 kg |\n| Cooking oil | Rs 40 | 1 kg |\n| Salt | Rs 5 | 1 kg |\n| Turmeric powder | Rs 10 | 100 g |\n| Cumin seeds | Rs 10 | 100 g |\n| Besan | Rs 30 | 1 kg |\n| Soy chunks | Rs 10 | 100 g |\n| Onion | Rs 20 | 1 kg |\n| Tomato | Rs 20 | 1 kg |',
+    { type: 'prices', prices: [['rice', 20, 1, 'kg'], ['moong dal', 30, 1, 'kg'], ['toor dal', 30, 1, 'kg'], ['cooking oil', 40, 1, 'kg'], ['salt', 5, 1, 'kg'], ['turmeric powder', 10, 100, 'g'], ['cumin seeds', 10, 100, 'g'], ['besan', 30, 1, 'kg'], ['soy chunks', 10, 100, 'g'], ['onion', 20, 1, 'kg'], ['tomato', 20, 1, 'kg']].map(([ingredient, packagePrice, packageQty, unit]) => ({ ingredient, packagePrice, packageQty, unit, region: 'Mumbai', asOf: '2024-03-01', evidenceQuote: `| ${ingredient[0].toUpperCase()}${ingredient.slice(1)} | Rs ${packagePrice} | ${packageQty} ${unit} |` })) }));
   await withMock(entries, async (c) => {
     const r = await agent(c, { ...baseRequest, budget: 25 });
     const k = r.recipes.find((x) => x.id === 'veg-khichdi');
@@ -152,7 +163,18 @@ test('source attribution: every cost line and recipe cites a retrieved document'
   await withMock(await seedEntries(), async (c) => {
     const r = await agent(c, baseRequest);
     const known = new Set(r.retrieved.map((s) => s.key));
-    for (const x of r.recipes) { assert.ok(known.has(x.evidence.source.key)); x.cost.lines.forEach((l) => assert.ok(known.has(l.price.evidence.source.key))); }
+    for (const x of r.recipes) { assert.ok(known.has(x.evidence.source.key)); x.cost.lines.filter((l) => l.price).forEach((l) => assert.ok(known.has(l.price.evidence.source.key))); }
     assert.ok(r.sources.every((s) => known.has(s.key)));
+  });
+});
+
+test('real data: unpriced items make the total incomplete and are never called "within budget"', async () => {
+  await withMock(await seedEntries(), async (c) => {
+    const r = await agent(c, { ...baseRequest, diet: 'nonveg', mealType: 'dinner', budget: 100, equipment: ['gas stove', 'pressure cooker'] });
+    for (const id of ['nv-egg-bhurji', 'nv-chicken-curry']) {
+      const x = r.recipes.find((y) => y.id === id);
+      assert.ok(x, id); assert.equal(x.cost.complete, false); assert.ok(x.cost.caveats.includes('missing_price'));
+      assert.equal(x.budget.state, 'unknown');
+    }
   });
 });

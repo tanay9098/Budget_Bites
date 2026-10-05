@@ -15,7 +15,7 @@ Spiced scrambled eggs with onion and tomato. Contains eggs, so it is NOT vegetar
 - Eggs 4 pieces
 - Onion 80 g
 - Tomato 80 g
-- Cooking oil 15 ml
+- Cooking oil 15 g
 - Green chilli 5 g
 - Turmeric powder 1 g
 - Salt 3 g
@@ -26,7 +26,7 @@ Spiced scrambled eggs with onion and tomato. Contains eggs, so it is NOT vegetar
 
 ```budgetbites-data
 {"type":"recipe","recipe":{"id":"nv-egg-bhurji","name":"Egg bhurji","cuisine":"North Indian","meals":["breakfast","dinner","snack"],"prepMinutes":5,"cookMinutes":10,"servingsBase":2,"equipment":["stove","pan"],"protein":true,
-"ingredients":[{"name":"egg","qty":4,"unit":"pc","category":"egg","aliases":["eggs"]},{"name":"onion","qty":80,"unit":"g","category":"veg"},{"name":"tomato","qty":80,"unit":"g","category":"veg"},{"name":"cooking oil","qty":15,"unit":"ml","category":"veg"},{"name":"green chilli","qty":5,"unit":"g","category":"veg"},{"name":"turmeric powder","qty":1,"unit":"g","category":"veg"},{"name":"salt","qty":3,"unit":"g","category":"veg"}],
+"ingredients":[{"name":"egg","qty":4,"unit":"pc","category":"egg","aliases":["eggs"]},{"name":"onion","qty":80,"unit":"g","category":"veg"},{"name":"tomato","qty":80,"unit":"g","category":"veg"},{"name":"cooking oil","qty":15,"unit":"g","category":"veg"},{"name":"green chilli","qty":5,"unit":"g","category":"veg"},{"name":"turmeric powder","qty":1,"unit":"g","category":"veg"},{"name":"salt","qty":3,"unit":"g","category":"veg"}],
 "steps":["Cook onion and chilli in oil until soft, add tomato and turmeric.","Beat the eggs with salt, pour in and stir until just set."],
 "why":"Quick and egg-based; needs no cooker.","evidenceQuote":"Contains eggs, so it is NOT vegetarian in BudgetBites"}}
 ```

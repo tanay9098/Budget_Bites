@@ -16,7 +16,7 @@ Keyword search can answer "khichdi recipe". It cannot answer "₹30, I have rice
 | Budget | Cost comes from **price documents** joined to **recipe quantities**, via `price × used ÷ package`. A cheaper-looking recipe is rejected if a price makes it ₹36/serving. |
 | Substitution | "Out of moong dal?" → the substitution guide says toor dal works but needs ~4 whistles; "out of tomato?" → no evidence, so the agent *says so* rather than inventing. |
 | Diet | Veg mode rejects egg/chicken by **ingredient**, not by the recipe's label; substitution candidates are re-checked (paneer fails a dairy exclusion). |
-| Freshness | A price dated 2024 from Mumbai makes a "₹25" answer an **estimate with its date and region**, never a promise. |
+| Freshness | A stale or regional price (tested with a 2024 Mumbai sheet) makes a "₹25" answer an **estimate with its date and region**, never a promise. |
 | Conflicts | If two retrieved sources disagree (e.g. soak dal vs. don't), both quotes are shown side by side, attributed, and left **unresolved** unless evidence settles it. |
 
 ## Architecture
@@ -103,7 +103,7 @@ Automated (mock content): `npm test` runs Scenarios A–E in `tests/mcp-agent.te
 ```bash
 npm test
 ```
-Actual result at the time of writing: **52 tests, 52 passing, 0 failing** (units/cost, diet/validation, evidence/provenance/conflict formatting, MCP client against a local mock server incl. auth failure/timeout/empty/malformed responses, agent scenarios A–E, prompt-injection handling, API validation/rate-limit/size-limit/path-traversal). These use a **mock MCP server**; they are *not* a live Sanity test. `npm run test:live` is the live test and **has not been run**.
+Actual result at the time of writing: **58 tests, 58 passing, 0 failing** (units/cost, diet/validation, evidence/provenance/conflict formatting, MCP client against a local mock server incl. auth failure/timeout/empty/malformed responses, agent scenarios A–E, prompt-injection handling, API validation/rate-limit/size-limit/path-traversal). These use a **mock MCP server**; they are *not* a live Sanity test. `npm run test:live` is the live test and **has not been run**.
 
 Browser checks (Playwright + Chromium, dev-mock mode): build → results → detail (serving scaling) → save → add to shopping list → saved/list views worked, no horizontal overflow at 320, 375, 430, 768, 1024, 1440 px for builder/results/saved/list/detail, no console errors other than the blocked Google Fonts request in the sandbox.
 
@@ -117,7 +117,7 @@ Any Node ≥ 20 host: set the environment variables as secrets, `npm ci --omit=d
 - **Live Sanity Context and live model: untested.** Outline format, tool names and arguments follow the official docs; entry layout and real error shapes are unconfirmed.
 - **Sanity raises Knowledge Base "Issues" (conflicts between sources) during a build; they are resolved in the Dashboard and baked into entries via instructions.** The docs list no MCP tool for reading Issues, so this app cannot show them. The conflicts it displays are *agent-detected* disagreements between entries it actually retrieved, and local choices are not written back to Sanity.
 - Document cap: the challenge brief states 150 documents; the docs pages I read say only that Knowledge Base limits are beta and may change (dataset source: 5,000 documents).
-- **Corpus is seed content with placeholder prices and no real source URLs** (see `knowledge-base/README.md`). Real answers need real, dated, sourced documents indexed in a Knowledge Base.
+- **Prices are real but narrow.** They come from the Department of Consumer Affairs Price Monitoring System (all-India average retail, Rs/kg, as on 2026-10-04) and cover only ten staples; chicken, eggs, soy chunks and spices have no price source, so those recipes show partial or "not costed" figures. The recipes/techniques themselves are still author-written seed text with no original URLs. See `knowledge-base/README.md`.
 - No nutrition values are produced (the corpus has none); "protein" is qualitative (pulses/soy/egg/meat present).
 - Design: only one design PDF (the design system: tokens, buttons, form controls, chips, badges, provenance chips) was supplied; there were no screen mockups. Screens were composed from those components. Illustrations are emoji placeholders; recipe-image assets were not provided. Fonts load from Google Fonts (falls back to system fonts).
 - The Sanity conflict-resolution/Dashboard write is not used. Conflict choices are local-only.
