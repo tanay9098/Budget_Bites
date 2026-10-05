@@ -1,0 +1,23 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+# Deploys BudgetBites in LIVE mode. Secrets are prompted for in the Render dashboard (sync: false),
+# never stored in this file. Keep numInstances at 1: the rate limiter is in-memory and per process.
+services:
+  - type: web
+    name: budget-bites
+    runtime: node
+    plan: free            # free tier sleeps when idle; use "starter" for a demo that must stay warm
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /api/health
+    numInstances: 1
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: SANITY_CONTEXT_MCP_URL
+        sync: false
+      - key: SANITY_ORG_API_TOKEN
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: SANITY_KNOWLEDGE_BASE_ID
+        sync: false
