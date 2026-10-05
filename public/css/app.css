@@ -212,3 +212,4 @@ main:focus,main:focus-visible{outline:none;box-shadow:none}
 .src,.claim,.notice,.card{overflow-wrap:anywhere}
 @media(max-width:400px){.seg button{font-size:12px;padding:0 2px}.btn{padding:0 14px}.wrap{padding:0 12px}.summary{padding:18px}.card{padding:16px}}
 .notice>*,.card>*,.src>*{min-width:0;max-width:100%}.badge--sourced{white-space:normal;text-align:left}
+.price--incomplete{font-size:20px;color:var(--saffron-ink)}

@@ -17,16 +17,17 @@ const OUT = path.join(path.dirname(fileURLToPath(import.meta.url)), '../knowledg
 
 // DoCA label -> { name used by recipes, aliases }
 const USE = {
-  'Rice': { name: 'rice' },
+  'Rice': { name: 'rice', aliases: ['basmati rice', 'parboiled rice'] },
   'Atta (Wheat)': { name: 'atta', aliases: ['wheat flour'] },
-  'Tur/Arhar Dal': { name: 'toor dal', aliases: ['tur dal', 'arhar dal'] },
+  'Tur/Arhar Dal': { name: 'toor dal', aliases: ['tur dal', 'arhar dal', 'tuvar dal', 'oily tuvar dal'] },
   'Moong Dal': { name: 'moong dal' },
   'Besan': { name: 'besan', aliases: ['gram flour'] },
   'Potato': { name: 'potato' },
   'Onion': { name: 'onion' },
   'Tomato': { name: 'tomato' },
   'Salt Pack (Iodised)': { name: 'salt' },
-  'Soya Oil (Packed)': { name: 'cooking oil', aliases: ['oil', 'soya oil'] },
+  'Soya Oil (Packed)': { name: 'cooking oil', aliases: ['oil', 'soya oil', 'vegetable oil'] },
+  'Mustard Oil (Packed)': { name: 'mustard oil' },
 };
 const NOT_USED = { 'Eggs': 'unit not stated (per dozen or per kg) so it cannot be converted per egg', 'Turmeric (powder)': 'figure is not plausible as Rs/kg and the page states no unit', 'Cummin Seed (whole)': 'figure is not plausible as Rs/kg and the page states no unit', 'Red Chillies (whole)': 'unit not stated', 'Ginger': 'not used by current recipes', 'Garlic': 'not used by current recipes' };
 
@@ -74,8 +75,9 @@ How to read these prices:
 - The quality and variety reported can differ between centres, though it stays the same for a given centre.
 - Price data reported on weekends and holidays is provisional until verified on the next working day.
 - Prices change daily. This sheet is a snapshot dated ${asOf}.
-- BudgetBites uses the "Soya Oil (Packed)" price as its generic cooking oil. The same source lists other packed oils separately, at different prices.
-- Cooking oil is priced per kilogram, so recipes list oil by weight (about 2 teaspoons is roughly 10 g).
+- BudgetBites uses the "Soya Oil (Packed)" price for generic cooking or vegetable oil and the "Mustard Oil (Packed)" price for mustard oil. The same source lists other packed oils separately, at different prices.
+- The source gives one price per kilogram for "Rice" without naming a variety, and BudgetBites applies it to any rice listed in a recipe (including basmati), so rice costs are approximate for specific varieties.
+- Oils are priced per kilogram while recipes usually list them in millilitres or spoons. No sourced density is available, so oil is shown as "not costed" rather than converted.
 
 Price in rupees per kg:
 
@@ -85,7 +87,7 @@ ${table.join('\n')}
 
 Not used, and why:
 ${skipped.join('\n')}
-- Chicken, soy chunks, paneer and green chilli are not among the commodities this source monitors, so no price is available for them here.
+- Chicken, eggs, cauliflower, peas, curd, coconut and paneer are not among the commodities this source monitors, so no price is available for them here.
 
 \`\`\`budgetbites-data
 ${JSON.stringify({ type: 'prices', prices })}

@@ -10,7 +10,7 @@ export function renderSaved(root) {
     append(root, h('div', { class: 'results-head' }, h('div', {}, h('h2', {}, 'Saved recipes'), h('p', { class: 'muted' }, 'Stored in this browser only. Clearing site data removes them. Not synced to any account.'))),
       items.length ? h('div', { class: 'grid' }, items.map(({ recipe: r, servings, savedAt }) => h('article', { class: 'card', style: 'display:grid;gap:10px;align-content:start' },
         h('div', {}, dietBadge(r.classification.diet)), h('h3', {}, h('a', { href: `#/recipe/${encodeURIComponent(r.id)}`, style: 'color:inherit' }, r.name)),
-        h('p', { class: 'muted' }, `Saved ${new Date(savedAt).toLocaleDateString()} · ${rupees(r.cost.perServing)}${r.cost.complete ? '' : '+'} per serving at save time`),
+        h('p', { class: 'muted' }, `Saved ${new Date(savedAt).toLocaleDateString()} · ${r.cost.complete ? `${rupees(r.cost.perServing)} per serving at save time` : 'cost was incomplete at save time'}`),
         h('p', { class: 'hint' }, `${r.evidence.source.title ?? r.evidence.source.path} · ${r.evidence.source.date ?? 'undated source'}`),
         h('div', { class: 'actions' }, h('a', { class: 'btn btn--primary btn--sm', href: `#/recipe/${encodeURIComponent(r.id)}` }, 'View'),
           h('button', { class: 'btn btn--ghost btn--sm', type: 'button', onclick: () => { const n = addToList(r, r.cost.lines, r.ingredientStatus); toast(n ? `Added ${n} items to your shopping list` : 'Nothing to add'); } }, '+ Shopping list'),

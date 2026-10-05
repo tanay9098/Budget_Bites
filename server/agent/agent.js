@@ -33,8 +33,8 @@ export async function runAgent({ request, mcp, extractor, config, mode = 'live',
 
   // Choose entries. Small KBs are read whole; larger ones are narrowed by the model, validated against the outline.
   // [core] entries (central to the Knowledge Base's purpose) are read first when we must truncate.
-  const rank = (e) => ({ core: 0, peripheral: 2 }[e.tag] ?? 1);
-  candidates = [...candidates].sort((a, b) => rank(a) - rank(b));
+  const tagRank = (e) => ({ core: 0, peripheral: 2 }[e.tag] ?? 1);
+  candidates = [...candidates].sort((a, b) => tagRank(a) - tagRank(b));
   let chosen = candidates;
   if (candidates.length > config.maxDocs && extractor.select) {
     const paths = await extractor.select({ request, outlineText: outline.raw });
@@ -125,7 +125,7 @@ function decorate(r, v, request, verified, priceBook) {
   const equip = r.equipment.filter((e) => e !== 'stove');
   if (equip.length) fit.push(`Equipment you listed: ${equip.join(', ')}`);
   // Only safety notes that relate to this recipe's equipment.
-  const safety = verified.safety.filter((s) => (r.equipment.includes('pressure cooker') && /cooker|vent|gasket/i.test(s.text)) || (/induction/i.test(s.text) && request.equipment.includes('induction cooktop')));
+  const safety = verified.safety.filter((s) => (/induction/i.test(s.text) ? request.equipment.includes('induction cooktop') : r.equipment.includes('pressure cooker') && /cooker|vent|gasket|dal/i.test(s.text)));
   return {
     ...r, classification: v.classification, cost: v.cost, budget: v.budget, warnings: v.warnings, ingredientStatus,
     substitutions: subs, safety, fit, proteinSources: ps, totalMinutes: r.prepMinutes + r.cookMinutes,
@@ -136,9 +136,11 @@ function decorate(r, v, request, verified, priceBook) {
 
 function rank(list, request) {
   const have = new Set((request.ingredients ?? []).map(normName));
-  const overlap = (r) => r.ingredients.filter((i) => have.has(normName(i.name))).length;
+  const overlap = (r) => r.ingredients.filter((i) => have.has(normName(i.name)) || (i.aliases ?? []).some((a) => have.has(normName(a)))).length;
   const p = request.preferences ?? {};
+  const cuisineHit = (r) => (request.cuisine && request.cuisine !== 'Any' && (r.cuisine ?? '').toLowerCase().includes(request.cuisine.toLowerCase().split(' ')[0]) ? 0 : 1);
   list.sort((a, b) =>
+    cuisineHit(a) - cuisineHit(b) ||
     (p.highProtein ? b.proteinSources.length - a.proteinSources.length : 0) ||
     overlap(b) - overlap(a) ||
     (p.fewIngredients ? a.ingredients.length - b.ingredients.length : 0) ||

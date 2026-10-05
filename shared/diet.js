@@ -1,6 +1,6 @@
 // Dietary classification. Categories come from the extracted ingredient (backed by evidence);
 // name matching is a safety net so an unlabelled "chicken" can never slip through as vegetarian.
-import { normName } from './cost.js';
+import { normName, isSeasoning } from './cost.js';
 
 const NONVEG_WORDS = {
   egg: ['egg', 'eggs', 'anda', 'omelette'],
@@ -65,4 +65,4 @@ export function proteinSources(recipe) {
 }
 
 export const PANTRY_BASICS = ['salt', 'cooking oil', 'oil', 'turmeric powder', 'cumin seeds', 'green chilli', 'red chilli powder', 'mustard seeds', 'sugar'];
-export const isPantry = (name) => PANTRY_BASICS.includes(normName(name));
+export const isPantry = (name) => PANTRY_BASICS.includes(normName(name)) || isSeasoning(name);

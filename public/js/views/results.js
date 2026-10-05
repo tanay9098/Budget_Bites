@@ -16,7 +16,7 @@ export function recipeCard(r, request, extra = {}) {
     h('div', { class: 'rc__body' },
       h('div', { class: 'rc__top' }, dietBadge(r.classification.diet), budgetBadges(r.budget)),
       h('h3', {}, h('a', { href: `#/recipe/${encodeURIComponent(r.id)}` }, r.name)),
-      h('div', {}, h('span', { class: 'price' }, rupees(cost.perServing), cost.complete ? '' : '+', ' ', h('small', {}, 'per serving')), h('div', { class: 'muted', style: 'font-size:13px' }, `${rupees(cost.total)}${cost.complete ? '' : '+'} for ${cost.servings}${cost.complete ? '' : ' (some prices missing)'}`), meterFor(cost, request.budget)),
+      h('div', {}, cost.complete ? [h('span', { class: 'price' }, rupees(cost.perServing), ' ', h('small', {}, 'per serving')), h('div', { class: 'muted', style: 'font-size:13px' }, `${rupees(cost.total)} for ${cost.servings}`)] : [h('span', { class: 'price price--incomplete' }, 'Cost incomplete'), h('div', { class: 'muted', style: 'font-size:13px' }, cost.total > 0 ? `At least ${rupees(cost.perServing)} per serving from the ingredients that have prices` : 'No ingredient could be priced from the Knowledge Base')], meterFor(cost, request.budget)),
       h('div', { class: 'meta' }, h('span', {}, `⏱ ${r.prepMinutes} min prep + ${r.cookMinutes} min cook`), r.equipment.filter((e) => e !== 'stove').length ? h('span', {}, `🍳 ${r.equipment.filter((e) => e !== 'stove').join(', ')}`) : null),
       h('p', {}, h('b', {}, 'Main ingredients: '), main),
       h('ul', { class: 'fit', 'aria-label': 'Why this fits' }, r.fit.map((f) => h('li', {}, f))),

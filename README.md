@@ -13,8 +13,8 @@ Keyword search can answer "khichdi recipe". It cannot answer "₹30, I have rice
 
 | Decision | What structured retrieval changes |
 |---|---|
-| Budget | Cost comes from **price documents** joined to **recipe quantities**, via `price × used ÷ package`. A cheaper-looking recipe is rejected if a price makes it ₹36/serving. |
-| Substitution | "Out of moong dal?" → the substitution guide says toor dal works but needs ~4 whistles; "out of tomato?" → no evidence, so the agent *says so* rather than inventing. |
+| Budget | Cost comes from **price documents** joined to **recipe quantities**, via `price × used ÷ package`. A recipe whose priced ingredients already exceed the budget is rejected; one with unpriced ingredients is never called "within budget". |
+| Substitution | When a sourced substitution document exists, each swap is re-checked against diet and exclusions (a paneer swap fails a dairy exclusion). When none exists, the agent says "no evidence-backed substitute" instead of inventing one. |
 | Diet | Veg mode rejects egg/chicken by **ingredient**, not by the recipe's label; substitution candidates are re-checked (paneer fails a dairy exclusion). |
 | Freshness | A stale or regional price (tested with a 2024 Mumbai sheet) makes a "₹25" answer an **estimate with its date and region**, never a promise. |
 | Conflicts | If two retrieved sources disagree (e.g. soak dal vs. don't), both quotes are shown side by side, attributed, and left **unresolved** unless evidence settles it. |
@@ -93,9 +93,9 @@ Still unconfirmed until `npm run test:live` runs against a real build: the exact
 
 ## Demonstrating the scenarios
 Automated (mock content): `npm test` runs Scenarios A–E in `tests/mcp-agent.test.js`. Interactively (after seeding your KB):
-- **A** Veg · ₹30 · Rice, Onion · Pressure cooker · "Higher protein" → khichdi/dal-rice rank above pulao; pulao notes low protein; chicken curry listed under "Considered but excluded" for budget.
-- **B** Open khichdi → "Need to buy" moong dal shows the toor-dal swap with its source; tomato shows "no evidence-backed substitute". With "Avoid dairy", a paneer swap for eggs is marked ✗.
-- **C** Add two genuinely disagreeing sources to your KB; the results page shows a side-by-side conflict card labelled *agent-detected*; your pick is stored **in this browser only**.
+- **A** Veg · ₹30 · Rice, Onion · Pressure cooker · "Higher protein" → tuvar dal and khichuri (pulses) rank above aloor dum (no protein source); tuvar dal is "within budget (estimate)"; khichuri shows "Cost incomplete" because cauliflower and peas have no price; the Kerala chicken curry is listed under "Considered but excluded" (not vegetarian).
+- **B** The shipped corpus has no sourced substitutions, so recipes say "no evidence-backed substitute". Add a sourced substitution document to see the diet-checked swaps (tests use a marked test-only one: a paneer swap for eggs is marked ✗ under "Avoid dairy").
+- **C** Add two genuinely disagreeing sources (none ship in the corpus) to your KB; the results page shows a side-by-side conflict card labelled *agent-detected*; your pick is stored **in this browser only**.
 - **D** Use ₹25 with an old/other-region price sheet → cost shows *Estimate*, with price date, region and freshness in the breakdown.
 - **E** Veg mode, or exclude Egg in Non-Veg → bhurji is rejected with the reason.
 
@@ -103,7 +103,7 @@ Automated (mock content): `npm test` runs Scenarios A–E in `tests/mcp-agent.te
 ```bash
 npm test
 ```
-Actual result at the time of writing: **58 tests, 58 passing, 0 failing** (units/cost, diet/validation, evidence/provenance/conflict formatting, MCP client against a local mock server incl. auth failure/timeout/empty/malformed responses, agent scenarios A–E, prompt-injection handling, API validation/rate-limit/size-limit/path-traversal). These use a **mock MCP server**; they are *not* a live Sanity test. `npm run test:live` is the live test and **has not been run**.
+Actual result at the time of writing: **59 tests, 59 passing, 0 failing** (units/cost, diet/validation, evidence/provenance/conflict formatting, MCP client against a local mock server incl. auth failure/timeout/empty/malformed responses, agent scenarios A–E, prompt-injection handling, API validation/rate-limit/size-limit/path-traversal). These use a **mock MCP server**; they are *not* a live Sanity test. `npm run test:live` is the live test and **has not been run**.
 
 Browser checks (Playwright + Chromium, dev-mock mode): build → results → detail (serving scaling) → save → add to shopping list → saved/list views worked, no horizontal overflow at 320, 375, 430, 768, 1024, 1440 px for builder/results/saved/list/detail, no console errors other than the blocked Google Fonts request in the sandbox.
 
@@ -117,7 +117,7 @@ Any Node ≥ 20 host: set the environment variables as secrets, `npm ci --omit=d
 - **Live Sanity Context and live model: untested.** Outline format, tool names and arguments follow the official docs; entry layout and real error shapes are unconfirmed.
 - **Sanity raises Knowledge Base "Issues" (conflicts between sources) during a build; they are resolved in the Dashboard and baked into entries via instructions.** The docs list no MCP tool for reading Issues, so this app cannot show them. The conflicts it displays are *agent-detected* disagreements between entries it actually retrieved, and local choices are not written back to Sanity.
 - Document cap: the challenge brief states 150 documents; the docs pages I read say only that Knowledge Base limits are beta and may change (dataset source: 5,000 documents).
-- **Prices are real but narrow.** They come from the Department of Consumer Affairs Price Monitoring System (all-India average retail, Rs/kg, as on 2026-10-04) and cover only ten staples; chicken, eggs, soy chunks and spices have no price source, so those recipes show partial or "not costed" figures. The recipes/techniques themselves are still author-written seed text with no original URLs. See `knowledge-base/README.md`.
+- **Recipes and prices are real but limited.** Recipes are transcribed from Hawkins' cookbooks and two published recipe pages (see `knowledge-base/SOURCES.md`; check the publishers' terms before redistributing). **Prices are real but narrow.** They come from the Department of Consumer Affairs Price Monitoring System (all-India average retail, Rs/kg, as on 2026-10-04) and cover only ten staples; chicken, eggs, soy chunks and spices have no price source, so those recipes show partial or "not costed" figures. No substitutions are sourced, so none are shown. See `knowledge-base/README.md`.
 - No nutrition values are produced (the corpus has none); "protein" is qualitative (pulses/soy/egg/meat present).
 - Design: only one design PDF (the design system: tokens, buttons, form controls, chips, badges, provenance chips) was supplied; there were no screen mockups. Screens were composed from those components. Illustrations are emoji placeholders; recipe-image assets were not provided. Fonts load from Google Fonts (falls back to system fonts).
 - The Sanity conflict-resolution/Dashboard write is not used. Conflict choices are local-only.

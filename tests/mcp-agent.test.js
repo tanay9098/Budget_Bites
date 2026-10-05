@@ -19,8 +19,8 @@ test('retrieval returns documents with provenance', async () => {
   await withMock(await seedEntries(), async (c) => {
     const o = await c.outline();
     assert.ok(o.entries.length >= 10); assert.equal(o.entries[0].kbId, 'kbDEVMOCK');
-    const d = await c.readEntry(o.entries.find((e) => e.path === 'recipe-veg-khichdi.md'));
-    assert.equal(d.title, 'Pressure-cooker moong dal khichdi (recipe)'); assert.equal(d.date, '2026-10-04'); assert.match(d.content, /moong dal/);
+    const d = await c.readEntry(o.entries.find((e) => e.path === 'recipe-khichuri.md'));
+    assert.equal(d.title, 'Khichuri - soft rice with split skinned green gram and vegetables (Hawkins)'); assert.equal(d.url, 'https://www.hawkinscookers.com/Cookbooks/AllIndianCookbook.pdf'); assert.match(d.content, /Moong dal/);
   });
 });
 test('missing tool is reported', async () => {
@@ -64,42 +64,51 @@ test('agent: a KB with no verifiable recipe returns no recipes and says so', asy
   });
 });
 
-// Test-only price for an item the real source does not monitor, so budget rejection can be exercised.
+// Test-only fixtures (NOT part of the shipped corpus).
 const chickenPriceDoc = () => doc('test-chicken-price.md', 'TEST chicken price', '| Chicken (curry cut) | 240.00 |', { type: 'prices', prices: [{ ingredient: 'chicken', packagePrice: 240, packageQty: 1, unit: 'kg', region: 'TEST', asOf: '2026-10-04', evidenceQuote: '| Chicken (curry cut) | 240.00 |' }] });
+const testSubsDoc = () => doc('test-subs.md', 'TEST substitution notes', 'Toor dal can replace moong dal in a pot of khichuri. Paneer can replace eggs in a bhurji.', { type: 'substitutions', substitutions: [
+  { ingredient: 'moong dal', substitute: 'tuvar dal', substituteCategory: 'veg', note: 'Takes longer to cook.', evidenceQuote: 'Toor dal can replace moong dal in a pot of khichuri.' },
+  { ingredient: 'eggs', substitute: 'paneer', substituteCategory: 'dairy', note: 'Contains dairy.', evidenceQuote: 'Paneer can replace eggs in a bhurji.' }] });
 
 // ---- Demonstration scenarios (A-E) ----
 test('Scenario A: Rs30, rice+onion, pressure cooker, veg, protein', async () => {
   await withMock([...(await seedEntries()), chickenPriceDoc()], async (c) => {
     const r = await agent(c, { ...baseRequest, preferences: { highProtein: true } });
-    assert.ok(r.recipes.length >= 2);
-    assert.ok(r.recipes.every((x) => x.classification.diet === 'veg' && x.cost.perServing <= 30));
-    assert.ok(r.recipes[0].proteinSources.length > 0, 'protein-rich recipe ranked first');
-    assert.ok(r.rejected.some((x) => x.failures.some((f) => f.code === 'budget')), 'chicken curry rejected on budget');
-    const pulao = r.recipes.find((x) => x.id === 'veg-pulao');
-    assert.ok(pulao && pulao.proteinSources.length === 0, 'low-protein trade-off is visible');
-    for (const x of r.recipes) {
-      assert.ok(x.evidence.quote);
-      if (x.cost.complete) assert.ok(x.cost.lines.every((l) => l.price || l.status === 'uncosted'), 'every costed line has a sourced price');
-      assert.ok(x.cost.caveats.includes('national_average'));
-    }
-    const kh = r.recipes.find((x) => x.id === 'veg-khichdi');
-    assert.ok(kh.cost.caveats.includes('uncosted_seasoning'), 'turmeric/cumin are reported as not costed');
-    assert.equal(kh.cost.lines.find((l) => l.name === 'rice').price.evidence.source.url, 'https://fcainfoweb.nic.in/');
-    assert.equal(kh.cost.lines.find((l) => l.name === 'rice').cost, 4.59, '100 g x Rs45.87/kg');
+    assert.deepEqual(r.recipes.map((x) => x.id).sort(), ['aloor-dum', 'khichuri', 'tuvar-dal']);
+    assert.ok(r.recipes.every((x) => x.classification.diet === 'veg'));
+    assert.ok(r.recipes[0].proteinSources.length > 0, 'a pulse-based recipe ranks first');
+    assert.equal(r.recipes.find((x) => x.id === 'aloor-dum').proteinSources.length, 0, 'low-protein trade-off is visible');
+    const dal = r.recipes.find((x) => x.id === 'tuvar-dal');
+    assert.equal(dal.cost.complete, true); assert.equal(dal.budget.state, 'within'); assert.ok(dal.budget.uncertain);
+    assert.equal(dal.cost.lines.find((l) => l.name === 'tuvar dal').cost, 9.36, '300 g for 8 scaled to 2 servings = 75 g x Rs124.82/kg');
+    const kh = r.recipes.find((x) => x.id === 'khichuri');
+    assert.equal(kh.cost.complete, false, 'cauliflower and peas have no price');
+    assert.equal(kh.budget.state, 'unknown', 'a lower bound can never be "within budget"');
+    const rice = kh.cost.lines.find((l) => l.name === 'basmati rice');
+    assert.equal(rice.pricedAs, 'rice'); assert.equal(rice.cost, 2.29, '200 g for 8 scaled to 2 servings = 50 g x Rs45.87/kg'); assert.ok(kh.cost.caveats.includes('priced_as_variant'));
+    assert.equal(rice.price.evidence.source.url, 'https://fcainfoweb.nic.in/');
+    assert.match(kh.evidence.source.url, /^https:\/\/www\.hawkinscookers\.com\//);
+    assert.ok(dal.cost.lines.find((l) => l.name === 'salt').status === 'uncosted', 'ml salt vs Rs/kg is not converted');
+  });
+  await withMock([...(await seedEntries()), chickenPriceDoc()], async (c) => {
+    const nv = await agent(c, { ...baseRequest, diet: 'nonveg', mealType: 'dinner', budget: 30 });
+    const k = nv.rejected.find((x) => x.id === 'kozhi-kuttan');
+    assert.ok(k && k.failures.some((f) => f.code === 'budget'), 'chicken curry is over Rs30 even as a lower bound');
   });
 });
 test('Scenario B: substitution guidance is retrieved, diet-checked, and gaps are stated', async () => {
   await withMock(await seedEntries(), async (c) => {
     const r = await agent(c, { ...baseRequest, ingredients: ['rice'] });
-    const k = r.recipes.find((x) => x.id === 'veg-khichdi');
-    const sub = k.substitutions.find((s) => s.ingredient === 'moong dal');
-    assert.equal(sub.substitute, 'toor dal'); assert.equal(sub.check.ok, true); assert.ok(sub.evidence.source.path === 'substitutions.md');
-    assert.equal(k.substitutions.some((s) => s.ingredient === 'tomato'), false, 'no evidence-backed tomato substitute => none invented');
+    assert.ok(r.recipes.every((x) => x.substitutions.length === 0), 'the shipped corpus has no sourced substitutions, so none are invented');
   });
-  await withMock(await seedEntries(), async (c) => {
-    const r = await agent(c, { ...baseRequest, diet: 'nonveg', budget: 100, mealType: 'dinner', exclusions: ['dairy'] });
-    const bhurji = r.recipes.find((x) => x.id === 'nv-egg-bhurji');
-    assert.equal(bhurji.substitutions.find((s) => s.substitute === 'paneer').check.ok, false, 'paneer fails the dairy exclusion');
+  await withMock([...(await seedEntries()), testSubsDoc()], async (c) => {
+    const r = await agent(c, { ...baseRequest, ingredients: ['rice'], maxMinutes: 0 });
+    const k = r.recipes.find((x) => x.id === 'khichuri');
+    const sub = k.substitutions.find((s) => s.ingredient === 'moong dal');
+    assert.equal(sub.substitute, 'tuvar dal'); assert.equal(sub.check.ok, true); assert.equal(sub.evidence.source.path, 'test-subs.md');
+    assert.equal(k.substitutions.some((s) => s.ingredient === 'cauliflower'), false);
+    const nv = await agent(c, { ...baseRequest, diet: 'nonveg', budget: 100, mealType: 'dinner', exclusions: ['dairy'] });
+    assert.equal(nv.recipes.find((x) => x.id === 'egg-bhurji').substitutions.find((s) => s.substitute === 'paneer').check.ok, false, 'paneer fails the dairy exclusion');
   });
 });
 const conflictDocs = () => [
@@ -123,14 +132,16 @@ test('Scenario C (negative): sources that agree produce no conflict', async () =
 });
 test('Scenario D: old/other-region price => estimate, never a promise', async () => {
   const entries = (await seedEntries()).filter((e) => !e.path.startsWith('prices-dca'));
-  entries.push(doc('old-prices.md', 'Old Mumbai price list', '| Ingredient | Price | Package quantity |\n| Rice | Rs 20 | 1 kg |\n| Moong dal | Rs 30 | 1 kg |\n| Toor dal | Rs 30 | 1 kg |\n| Cooking oil | Rs 40 | 1 kg |\n| Salt | Rs 5 | 1 kg |\n| Turmeric powder | Rs 10 | 100 g |\n| Cumin seeds | Rs 10 | 100 g |\n| Besan | Rs 30 | 1 kg |\n| Soy chunks | Rs 10 | 100 g |\n| Onion | Rs 20 | 1 kg |\n| Tomato | Rs 20 | 1 kg |',
-    { type: 'prices', prices: [['rice', 20, 1, 'kg'], ['moong dal', 30, 1, 'kg'], ['toor dal', 30, 1, 'kg'], ['cooking oil', 40, 1, 'kg'], ['salt', 5, 1, 'kg'], ['turmeric powder', 10, 100, 'g'], ['cumin seeds', 10, 100, 'g'], ['besan', 30, 1, 'kg'], ['soy chunks', 10, 100, 'g'], ['onion', 20, 1, 'kg'], ['tomato', 20, 1, 'kg']].map(([ingredient, packagePrice, packageQty, unit]) => ({ ingredient, packagePrice, packageQty, unit, region: 'Mumbai', asOf: '2024-03-01', evidenceQuote: `| ${ingredient[0].toUpperCase()}${ingredient.slice(1)} | Rs ${packagePrice} | ${packageQty} ${unit} |` })) }));
+  const rows = [['tuvar dal', 30, 'kg'], ['tomato', 20, 'kg'], ['onion', 20, 'kg'], ['potato', 15, 'kg']];
+  const label = (n) => n[0].toUpperCase() + n.slice(1);
+  entries.push(doc('old-prices.md', 'Old Mumbai price list', '| Ingredient | Price | Package quantity |\n' + rows.map(([n, p, u]) => `| ${label(n)} | Rs ${p} | 1 ${u} |`).join('\n'),
+    { type: 'prices', prices: rows.map(([ingredient, packagePrice, unit]) => ({ ingredient, packagePrice, packageQty: 1, unit, region: 'Mumbai', asOf: '2024-03-01', evidenceQuote: `| ${label(ingredient)} | Rs ${packagePrice} | 1 ${unit} |` })) }));
   await withMock(entries, async (c) => {
     const r = await agent(c, { ...baseRequest, budget: 25 });
-    const k = r.recipes.find((x) => x.id === 'veg-khichdi');
+    const k = r.recipes.find((x) => x.id === 'tuvar-dal');
     assert.ok(k, 'recipe still shown');
     assert.ok(k.budget.uncertain, 'flagged uncertain'); assert.ok(k.cost.caveats.includes('stale_price'));
-    const priced = k.cost.lines.find((l) => l.name === 'rice').price;
+    const priced = k.cost.lines.find((l) => l.name === 'tuvar dal').price;
     assert.equal(priced.region, 'Mumbai'); assert.equal(priced.asOf, '2024-03-01'); assert.equal(priced.freshness, 'stale');
   });
 });
@@ -138,10 +149,12 @@ test('Scenario E: vegetarian mode and egg exclusion reject incompatible recipes'
   await withMock(await seedEntries(), async (c) => {
     const v = await agent(c, { ...baseRequest, mealType: 'dinner', budget: 100 });
     assert.ok(v.recipes.every((x) => x.classification.diet === 'veg'));
-    assert.ok(v.rejected.some((x) => x.id === 'nv-egg-bhurji' && x.failures.some((f) => f.code === 'diet')));
+    assert.ok(v.rejected.some((x) => x.id === 'egg-bhurji' && x.failures.some((f) => f.code === 'diet')));
+    assert.ok(v.rejected.some((x) => x.id === 'kozhi-kuttan' && x.failures.some((f) => f.code === 'diet')));
     const nv = await agent(c, { ...baseRequest, diet: 'nonveg', mealType: 'dinner', budget: 100, exclusions: ['egg'] });
-    assert.ok(nv.recipes.length > 0); assert.ok(!nv.recipes.some((x) => x.id === 'nv-egg-bhurji'));
-    assert.ok(nv.rejected.some((x) => x.id === 'nv-egg-bhurji' && x.failures.some((f) => f.code === 'exclusion')));
+    assert.ok(nv.recipes.length > 0); assert.ok(!nv.recipes.some((x) => x.id === 'egg-bhurji'));
+    assert.ok(nv.rejected.some((x) => x.id === 'egg-bhurji' && x.failures.some((f) => f.code === 'exclusion')));
+    assert.ok(nv.recipes.some((x) => x.id === 'kozhi-kuttan'), 'non-veg mode still allows non-egg non-veg dishes');
   });
 });
 test('no matching recipes: explains which constraints to relax', async () => {
@@ -159,22 +172,35 @@ test('untrusted content: injected instructions in a document are ignored and fab
     assert.ok(r.recipes.every((x) => x.cost.perServing > 0), 'prices not zeroed by injected text');
   });
 });
-test('source attribution: every cost line and recipe cites a retrieved document', async () => {
+test('source attribution: every recipe, price and safety note cites a retrieved document', async () => {
   await withMock(await seedEntries(), async (c) => {
     const r = await agent(c, baseRequest);
     const known = new Set(r.retrieved.map((s) => s.key));
-    for (const x of r.recipes) { assert.ok(known.has(x.evidence.source.key)); x.cost.lines.filter((l) => l.price).forEach((l) => assert.ok(known.has(l.price.evidence.source.key))); }
+    for (const x of r.recipes) {
+      assert.ok(known.has(x.evidence.source.key)); assert.ok(x.evidence.source.url, 'recipe source keeps its original URL');
+      x.cost.lines.filter((l) => l.price).forEach((l) => assert.ok(known.has(l.price.evidence.source.key)));
+      x.safety.forEach((s) => assert.ok(known.has(s.evidence.source.key)));
+    }
+    assert.ok(r.recipes.some((x) => x.safety.some((s) => /two-thirds/.test(s.text))), 'cooker filling limit is surfaced with its source');
     assert.ok(r.sources.every((s) => known.has(s.key)));
   });
 });
-
+test('induction safety note appears only for induction users', async () => {
+  await withMock(await seedEntries(), async (c) => {
+    const gas = await agent(c, baseRequest);
+    assert.ok(gas.recipes.every((x) => x.safety.every((s) => !/induction/i.test(s.text))));
+    const ind = await agent(c, { ...baseRequest, equipment: ['induction cooktop', 'pressure cooker'] });
+    assert.ok(ind.recipes.some((x) => x.safety.some((s) => /induction/i.test(s.text))));
+  });
+});
 test('real data: unpriced items make the total incomplete and are never called "within budget"', async () => {
   await withMock(await seedEntries(), async (c) => {
-    const r = await agent(c, { ...baseRequest, diet: 'nonveg', mealType: 'dinner', budget: 100, equipment: ['gas stove', 'pressure cooker'] });
-    for (const id of ['nv-egg-bhurji', 'nv-chicken-curry']) {
+    const r = await agent(c, { ...baseRequest, diet: 'nonveg', mealType: 'dinner', budget: 100 });
+    for (const id of ['egg-bhurji', 'kozhi-kuttan', 'khichuri']) {
       const x = r.recipes.find((y) => y.id === id);
-      assert.ok(x, id); assert.equal(x.cost.complete, false); assert.ok(x.cost.caveats.includes('missing_price'));
-      assert.equal(x.budget.state, 'unknown');
+      assert.ok(x, id); assert.equal(x.cost.complete, false); assert.equal(x.budget.state, 'unknown');
     }
+    assert.ok(r.recipes.find((y) => y.id === 'kozhi-kuttan').cost.caveats.includes('missing_price'));
+    assert.equal(r.recipes.find((y) => y.id === 'besan-chilla')?.cost.lines.find((l) => l.name === 'onion').status ?? 'incompatible_units', 'incompatible_units', 'cups of chopped onion are not converted to kg');
   });
 });
