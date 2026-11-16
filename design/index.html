@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BudgetBites — Build a Recipe</title>
+<meta name="description" content="Visual prototype: Indian student budget recipe builder. Sample data only; no live AI or Sanity retrieval.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body data-mode="veg">
+<header class="nav">
+  <div class="wrap">
+    <a class="logo" href="#" data-go="build" aria-label="BudgetBites home">
+      <span class="logo-mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 12h16a8 8 0 0 1-16 0Z" fill="#fff"/><path d="M12 11c0-4 2-6 6-6 0 4-2 6-6 6Z" fill="#E9A23B"/><path d="M12 11c0-3-1.5-4.5-4.5-4.5C7.500 9.500 9 11 12 11Z" fill="#7bc79c"/></svg></span>
+      <span>Budget<b>Bites</b></span>
+    </a>
+    <nav class="nav-links" aria-label="Main">
+      <button data-go="build">Build a Recipe</button>
+      <button data-go="discover">Discover</button>
+      <button data-go="saved">Saved Recipes</button>
+    </nav>
+    <div class="nav-right">
+      <button class="btn btn-ghost btn-icon" id="prefsBtn" aria-label="Preferences" title="Preferences">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
+      </button>
+      <button class="btn btn-primary hide-m" data-go="list">Shopping list <span class="badge-count" id="listCount">0</span></button>
+    </div>
+  </div>
+</header>
+
+<main id="main"></main>
+
+<footer><div class="wrap">
+  <span>BudgetBites — visual prototype. All recipes, prices and nutrition are sample data. No live AI or Sanity retrieval is connected.</span>
+  <span><a href="#" data-go="states">UI states</a> · <a href="#" data-go="system">Design system</a> · <a href="preview.html">Responsive preview</a></span>
+</div></footer>
+
+<nav class="tabbar" aria-label="Main (mobile)">
+  <button data-go="build"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 14a6 6 0 0 1 12 0v2H6v-2ZM8 20h8M9 9a3 3 0 0 1 6 0"/></svg>Build</button>
+  <button data-go="discover"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>Discover</button>
+  <button data-go="saved"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20s-7-4.500-7-10a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 5.500-7 10-7 10Z"/></svg>Saved</button>
+  <button data-go="list"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg>List</button>
+</nav>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Recipe details"></aside>
+<div class="dialog" id="remix" role="dialog" aria-modal="true" aria-labelledby="remixTitle"></div>
+<div class="dialog" id="prefs" role="dialog" aria-modal="true" aria-labelledby="prefsTitle"></div>
+<div class="cook" id="cook" role="dialog" aria-modal="true" aria-label="Cooking mode"></div>
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+<script src="app.js"></script>
+</body>
+</html>
